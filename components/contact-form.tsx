@@ -27,7 +27,7 @@ export function ContactForm() {
 
     try {
       // First, try to send via API route
-      const response = await fetch('/api/send-email-simple', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +54,15 @@ export function ContactForm() {
           setSubmitStatus('idle')
         }, 3000)
       } else {
-        throw new Error('API request failed')
+        // Log details but avoid throwing to prevent noisy console errors
+        try {
+          const errorText = await response.text()
+          console.error('Contact API request failed:', response.status, errorText)
+        } catch {
+          console.error('Contact API request failed with status:', response.status)
+        }
+        setSubmitStatus('error')
+        return
       }
     } catch (error) {
       console.error("Error submitting form:", error)
