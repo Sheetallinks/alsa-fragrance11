@@ -134,11 +134,6 @@ export default function AuthPage() {
                   Admin
                 </Button>
               </div>
-              {userType === "admin" && (
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Use: admin@alsafragrance.com / admin123
-                </p>
-              )}
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -154,7 +149,7 @@ export default function AuthPage() {
                     <Input
                       id="login-email"
                       type="email"
-                      placeholder={userType === "admin" ? "admin@alsafragrance.com" : "your@email.com"}
+                      placeholder="your@email.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
@@ -165,23 +160,12 @@ export default function AuthPage() {
                     <Input
                       id="login-password"
                       type="password"
-                      placeholder={userType === "admin" ? "admin123" : ""}
+                      placeholder="Enter your password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
                     />
                   </div>
-                  {userType === "admin" && (
-                    <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
-                      <p className="font-medium text-blue-900 dark:text-blue-100">Admin Credentials:</p>
-                      <p className="text-blue-700 dark:text-blue-300 mt-1">
-                        Email: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">admin@alsafragrance.com</code>
-                      </p>
-                      <p className="text-blue-700 dark:text-blue-300">
-                        Password: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">admin123</code>
-                      </p>
-                    </div>
-                  )}
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Logging in..." : userType === "admin" ? "Login as Admin" : "Login"}
                   </Button>
