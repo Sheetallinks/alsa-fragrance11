@@ -19,14 +19,16 @@ export async function POST(request: Request) {
     })
 
     if (!resend) {
-      console.error("[v0] RESEND_API_KEY is not configured. Skipping email send.")
+      // Return 503 Service Unavailable instead of 500 for missing API key
+      // This is an expected configuration issue, not a server error
       return NextResponse.json(
         {
           success: false,
           message:
             "Email service is temporarily unavailable. Please try again later or email us directly at fragrancealsa@gmail.com.",
+          fallback: true, // Signal to client to use fallback method
         },
-        { status: 500 },
+        { status: 503 },
       )
     }
 

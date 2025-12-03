@@ -54,80 +54,96 @@ export function ContactForm() {
           setSubmitStatus('idle')
         }, 3000)
       } else {
-        // Log details but avoid throwing to prevent noisy console errors
+        // Parse error response to check if fallback should be used
+        let errorData
         try {
           const errorText = await response.text()
-          console.error('Contact API request failed:', response.status, errorText)
+          errorData = JSON.parse(errorText)
         } catch {
+          // If response isn't JSON, treat as unexpected error
           console.error('Contact API request failed with status:', response.status)
+          setSubmitStatus('error')
+          return
         }
-        setSubmitStatus('error')
+
+        // If API suggests fallback (e.g., service unavailable), use mailto automatically
+        if (errorData.fallback || response.status === 503) {
+          // Silently fall back to mailto method - this is expected behavior
+          // Don't log as error since this is a graceful degradation
+          await handleMailtoFallback()
+        } else {
+          // Unexpected error - show error message to user
+          setSubmitStatus('error')
+        }
         return
       }
     } catch (error) {
-      console.error("Error submitting form:", error)
+      // Network error or other exception - use fallback
+      await handleMailtoFallback()
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Extract mailto fallback logic into a reusable function
+  const handleMailtoFallback = async () => {
+    try {
+      const emailContent = `
+New Contact Form Submission
+
+Name: ${formData.name}
+Email: ${formData.email}
+Subject: ${formData.subject}
+Message: ${formData.message}
+
+Submitted on: ${new Date().toLocaleString()}
+      `.trim()
+
+      // Create mailto link with pre-filled content
+      const mailtoLink = `mailto:fragrancealsa@gmail.com?subject=Contact Form: ${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(emailContent)}`
       
-      // Fallback to mailto method
-      try {
-        const emailContent = `
-New Contact Form Submission
-
-Name: ${formData.name}
-Email: ${formData.email}
-Subject: ${formData.subject}
-Message: ${formData.message}
-
-Submitted on: ${new Date().toLocaleString()}
-        `.trim()
-
-        // Create mailto link with pre-filled content
-        const mailtoLink = `mailto:fragrancealsa@gmail.com?subject=Contact Form: ${formData.subject}&body=${encodeURIComponent(emailContent)}`
-        
-        // Try to open email client
-        const emailWindow = window.open(mailtoLink, '_blank')
-        
-        if (emailWindow) {
-          setSubmitStatus('success')
-          setTimeout(() => {
-            setFormData({ name: "", email: "", subject: "", message: "" })
-            setSubmitStatus('idle')
-          }, 3000)
-        } else {
-          // Final fallback: copy to clipboard
-          await navigator.clipboard.writeText(emailContent)
-          setSubmitStatus('success')
-          alert("Email content copied to clipboard! Please paste it into your email client and send to fragrancealsa@gmail.com")
-          
-          setTimeout(() => {
-            setFormData({ name: "", email: "", subject: "", message: "" })
-            setSubmitStatus('idle')
-          }, 3000)
-        }
-      } catch (fallbackError) {
-        console.error("Fallback method failed:", fallbackError)
-        setSubmitStatus('error')
-        
-        // Show manual email instructions
-        const emailContent = `
-New Contact Form Submission
-
-Name: ${formData.name}
-Email: ${formData.email}
-Subject: ${formData.subject}
-Message: ${formData.message}
-
-Submitted on: ${new Date().toLocaleString()}
-        `.trim()
-        
-        alert(`Please send an email to fragrancealsa@gmail.com with the following content:\n\n${emailContent}`)
+      // Try to open email client
+      const emailWindow = window.open(mailtoLink, '_blank')
+      
+      if (emailWindow) {
+        setSubmitStatus('success')
+        setTimeout(() => {
+          setFormData({ name: "", email: "", subject: "", message: "" })
+          setSubmitStatus('idle')
+        }, 3000)
+      } else {
+        // Final fallback: copy to clipboard
+        await navigator.clipboard.writeText(emailContent)
+        setSubmitStatus('success')
+        alert("Email content copied to clipboard! Please paste it into your email client and send to fragrancealsa@gmail.com")
         
         setTimeout(() => {
           setFormData({ name: "", email: "", subject: "", message: "" })
           setSubmitStatus('idle')
         }, 3000)
       }
-    } finally {
-      setIsSubmitting(false)
+    } catch (fallbackError) {
+      console.error("Fallback method failed:", fallbackError)
+      setSubmitStatus('error')
+      
+      // Show manual email instructions
+      const emailContent = `
+New Contact Form Submission
+
+Name: ${formData.name}
+Email: ${formData.email}
+Subject: ${formData.subject}
+Message: ${formData.message}
+
+Submitted on: ${new Date().toLocaleString()}
+      `.trim()
+      
+      alert(`Please send an email to fragrancealsa@gmail.com with the following content:\n\n${emailContent}`)
+      
+      setTimeout(() => {
+        setFormData({ name: "", email: "", subject: "", message: "" })
+        setSubmitStatus('idle')
+      }, 3000)
     }
   }
 
