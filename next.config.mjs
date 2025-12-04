@@ -6,9 +6,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Handle environment variables
+  // Handle environment variables (must be provided in .env / Vercel)
   env: {
-    DATABASE_URL: process.env.DATABASE_URL || "file:./prisma/dev.db",
+    DATABASE_URL: process.env.DATABASE_URL,
   },
 }
 
