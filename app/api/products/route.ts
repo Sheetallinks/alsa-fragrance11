@@ -1,64 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import connectDB from '@/lib/mongodb'
+import Product from '@/lib/models/Product'
 
 // GET all products
 export async function GET(request: NextRequest) {
   try {
+    await connectDB()
+    
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const onSale = searchParams.get('onSale')
     const isNew = searchParams.get('isNew')
 
-    const where: any = {}
-    if (category) where.category = category
-    if (onSale === 'true') where.isSale = true
-    if (isNew === 'true') where.isNew = true
+    const filter: any = {}
+    if (category) filter.category = category
+    if (onSale === 'true') filter.isSale = true
+    if (isNew === 'true') filter.isNew = true
 
-    const products = await prisma.product.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    })
+    const products = await Product.find(filter).sort({ createdAt: -1 })
 
     // Transform products to match frontend format
     const transformedProducts = products.map((product) => {
-      let images: string[] = []
-      let notesTop: string[] = []
-      let notesMiddle: string[] = []
-      let notesBase: string[] = []
-      let size: string[] = []
-
-      try {
-        if (product.images) images = JSON.parse(product.images)
-      } catch (e) {
-        console.error('Error parsing images:', e)
-      }
-
-      try {
-        if (product.notesTop) notesTop = JSON.parse(product.notesTop)
-      } catch (e) {
-        console.error('Error parsing notesTop:', e)
-      }
-
-      try {
-        if (product.notesMiddle) notesMiddle = JSON.parse(product.notesMiddle)
-      } catch (e) {
-        console.error('Error parsing notesMiddle:', e)
-      }
-
-      try {
-        if (product.notesBase) notesBase = JSON.parse(product.notesBase)
-      } catch (e) {
-        console.error('Error parsing notesBase:', e)
-      }
-
-      try {
-        if (product.size) size = JSON.parse(product.size)
-      } catch (e) {
-        console.error('Error parsing size:', e)
-      }
-
       return {
-        id: product.id,
+        id: product._id.toString(),
         name: product.name,
         category: product.category,
         price: product.isSale && product.salePrice ? product.salePrice : product.price,
@@ -66,14 +30,14 @@ export async function GET(request: NextRequest) {
         rating: product.rating,
         reviews: product.reviews,
         image: product.image,
-        images,
+        images: product.images || [],
         description: product.description,
         notes: {
-          top: notesTop,
-          middle: notesMiddle,
-          base: notesBase,
+          top: product.notesTop || [],
+          middle: product.notesMiddle || [],
+          base: product.notesBase || [],
         },
-        size,
+        size: product.size || [],
         inStock: product.inStock,
         isNew: product.isNew,
         isSale: product.isSale,
@@ -91,6 +55,8 @@ export async function GET(request: NextRequest) {
 // POST create new product
 export async function POST(request: NextRequest) {
   try {
+    await connectDB()
+    
     const body = await request.json()
     const {
       name,
@@ -112,31 +78,32 @@ export async function POST(request: NextRequest) {
       badge,
     } = body
 
-    const product = await prisma.product.create({
-      data: {
-        name,
-        category,
-        price: parseFloat(price),
-        originalPrice: originalPrice ? parseFloat(originalPrice) : null,
-        salePrice: salePrice ? parseFloat(salePrice) : null,
-        salePercent: salePercent ? parseFloat(salePercent) : null,
-        rating: rating ? parseFloat(rating) : 0,
-        reviews: reviews || 0,
-        image,
-        images: images ? JSON.stringify(images) : null,
-        description,
-        notesTop: notes?.top ? JSON.stringify(notes.top) : null,
-        notesMiddle: notes?.middle ? JSON.stringify(notes.middle) : null,
-        notesBase: notes?.base ? JSON.stringify(notes.base) : null,
-        size: size ? JSON.stringify(size) : null,
-        inStock: inStock !== undefined ? inStock : true,
-        isNew: isNew || false,
-        isSale: isSale || false,
-        badge: badge || null,
-      },
+    const product = await Product.create({
+      name,
+      category,
+      price: parseFloat(price),
+      originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
+      salePrice: salePrice ? parseFloat(salePrice) : undefined,
+      salePercent: salePercent ? parseFloat(salePercent) : undefined,
+      rating: rating ? parseFloat(rating) : 0,
+      reviews: reviews || 0,
+      image,
+      images: images || undefined,
+      description,
+      notesTop: notes?.top || undefined,
+      notesMiddle: notes?.middle || undefined,
+      notesBase: notes?.base || undefined,
+      size: size || undefined,
+      inStock: inStock !== undefined ? inStock : true,
+      isNew: isNew || false,
+      isSale: isSale || false,
+      badge: badge || undefined,
     })
 
-    return NextResponse.json(product, { status: 201 })
+    return NextResponse.json({
+      id: product._id.toString(),
+      ...product.toObject(),
+    }, { status: 201 })
   } catch (error) {
     console.error('Error creating product:', error)
     return NextResponse.json({ error: 'Failed to create product' }, { status: 500 })

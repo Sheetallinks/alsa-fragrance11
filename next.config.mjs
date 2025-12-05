@@ -6,9 +6,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Handle environment variables (must be provided in .env / Vercel)
+  // Handle environment variables
   env: {
-    DATABASE_URL: process.env.DATABASE_URL,
+    MONGODB_URI: process.env.MONGODB_URI,
   },
 }
 
