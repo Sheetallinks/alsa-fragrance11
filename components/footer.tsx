@@ -265,9 +265,14 @@ export function Footer() {
           >
             <p className="text-sm text-muted-foreground">
               Designed by{" "}
-              <span className="text-primary font-semibold hover:text-primary/80 transition-colors">
+              <a 
+                href="https://bonusitsolutions.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary font-semibold hover:text-primary/80 transition-colors underline"
+              >
                 Bonus IT Solutions
-              </span>
+              </a>
             </p>
           </motion.div>
         </motion.div>
